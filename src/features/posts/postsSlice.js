@@ -1,5 +1,4 @@
-import { createSlice, nanoid, createAsyncThunk, createSelector, createEntityAdapter } from '@reduxjs/toolkit'
-import { client } from '../../api/client'
+import { createSlice, nanoid, createSelector, createEntityAdapter } from '@reduxjs/toolkit'
 
 const postsAdapter = createEntityAdapter({
   sortComparer: (a, b) => b.date.localeCompare(a.date)
@@ -7,40 +6,61 @@ const postsAdapter = createEntityAdapter({
 
 const initialState = postsAdapter.getInitialState({
   status: 'idle',
-  error: null
-})
-
-export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
-  const response = await client.get('/fakeApi/posts')
-  return response.posts
-})
-
-export const addNewPost = createAsyncThunk('posts/addNewPost', async initialPost => {
-  const response = await client.post('/fakeApi/posts', { post: initialPost })
-  return response.post
+  error: null,
+  postFormStatus: 'init'
 })
 
 const postsSlice = createSlice({
   name: 'posts',
   initialState,
   reducers: {
-    postAdded: {
-      reducer(state, action) {
-        state.posts.push(action.payload)
+    fetchPosts(state) {
+      state.status = 'loading'
+    },
+    fetchPostsSuccess(state, action) {
+      state.status = 'succeeded'
+      postsAdapter.upsertMany(state, action.payload.posts.posts)
+    },
+    fetchPostsFailed(state, action) {
+      state.status = 'failed'
+      state.error = action.error.message
+    },
+
+    // postInProgress(state) {
+    //   state.postFormStatus = 'modified'
+    // },
+    addNewPost: {
+      reducer(state) {
+        state.status = 'loading'
       },
-      prepare(title, content, userId) {
+      prepare({title, content, user}) {
         return {
           payload: {
             id: nanoid(),
             date: new Date().toISOString(),
             title,
             content,
-            user: userId,
+            user,
             reactions: {thumbsUp: 0, hooray: 0}
           }
         }
       }
     },
+    postAdded(state, action) {
+      state.status = 'succeeded'
+      postsAdapter.addOne(state, action.payload.newPost.post)
+    },
+    postRejected(state, action) {
+      state.status = 'failed'
+      state.error = action.payload.error
+    },
+    cleanPostForm(state) {
+      state.postFormStatus = 'clean'
+    },
+    initPostForm(state) {
+      state.postFormStatus = 'init'
+    },
+
     postUpdated(state, action) {
       const { id, title, content } = action.payload
       const existingPost = state.entities[id]
@@ -56,24 +76,11 @@ const postsSlice = createSlice({
         existingPost.reactions[reaction]++
       }
     }
-  },
-  extraReducers: {
-    [fetchPosts.pending]: (state, action) => {
-      state.status = 'loading'
-    },
-    [fetchPosts.fulfilled]: (state, action) => {
-      state.status = 'succeeded'
-      postsAdapter.upsertMany(state, action.payload)
-    },
-    [fetchPosts.rejected]: (state, action) => {
-      state.status = 'failed'
-      state.error = action.error.message
-    },
-    [addNewPost.fulfilled]: postsAdapter.addOne
   }
 })
 
-export const { postAdded, postUpdated, reactionAdded } = postsSlice.actions
+export const { postUpdated, reactionAdded } = postsSlice.actions
+export const { name, reducer, actions } = postsSlice
 
 export default postsSlice.reducer
 

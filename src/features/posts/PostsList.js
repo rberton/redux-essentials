@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react'
 
 import { useSelector, useDispatch } from 'react-redux'
-import { /*selectAllPosts,*/ fetchPosts, selectPostIds, selectPostById } from './postsSlice'
+import { useInjectReducer, useInjectSaga } from 'redux-injectors'
+
+import { reducer, selectPostIds, selectPostById, name } from './postsSlice'
+import saga from './postsSaga'
 
 import { Link } from 'react-router-dom'
 
@@ -26,15 +29,17 @@ let PostExcerpt = ({postId}) => {
 }
 
 export const PostsList = () => {
+  useInjectReducer({key: name, reducer})
+  useInjectSaga({key: name, saga})
+
   const dispatch = useDispatch()
   const orderedPostIds = useSelector(selectPostIds)
-
   const postStatus = useSelector(state => state.posts.status)
   const error = useSelector(state => state.posts.error)
 
   useEffect(() => {
     if (postStatus === 'idle') {
-      dispatch(fetchPosts())
+      dispatch({type: 'posts/fetchPosts'})
     }
   }, [postStatus, dispatch])
 
