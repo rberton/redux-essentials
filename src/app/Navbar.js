@@ -1,16 +1,22 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useInjectReducer, useInjectSaga } from 'redux-injectors'
+
 import { Link } from 'react-router-dom'
 
-import { fetchNotifications, selectAllNotifications } from '../features/notifications/notificationsSlice'
+import { name, reducer, actions, selectAllNotifications } from '../features/notifications/notificationsSlice'
+import saga from '../features/notifications/notificationsSaga'
 
 export const Navbar = () => {
+  useInjectReducer({key: name, reducer})
+  useInjectSaga({key: name, saga})
+
   const dispatch = useDispatch()
   const notifications = useSelector(selectAllNotifications)
   const numUnreadNotifications = notifications.filter(n => !n.read).length
 
   const fetchNewNotifications = () => {
-    dispatch(fetchNotifications())
+    dispatch(actions.fetchNotifications())
   }
 
   let unreadNotificationsBadge

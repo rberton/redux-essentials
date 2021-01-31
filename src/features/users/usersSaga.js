@@ -2,7 +2,7 @@ import { takeLatest, call, put } from 'redux-saga/effects'
 import { client } from '../../api/client'
 import { actions } from './usersSlice'
 
-function* getUsers() {
+function* fetchUsers() {
   try {
     const users = yield call(client.get, '/fakeApi/users')
     yield put(actions.fetchUsersSuccess({ users }))
@@ -11,5 +11,5 @@ function* getUsers() {
   }
 }
 export default function* usersSaga() {
-  yield takeLatest(actions.fetchUsers.type, getUsers)
+  yield takeLatest(actions.fetchUsers.type, fetchUsers)
 }

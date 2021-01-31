@@ -26,9 +26,6 @@ const postsSlice = createSlice({
       state.error = action.error.message
     },
 
-    // postInProgress(state) {
-    //   state.postFormStatus = 'modified'
-    // },
     addNewPost: {
       reducer(state) {
         state.status = 'loading'

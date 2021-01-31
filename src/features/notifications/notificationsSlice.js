@@ -1,45 +1,39 @@
-import { createSlice, createAsyncThunk, createEntityAdapter } from '@reduxjs/toolkit'
-
-import { client } from '../../api/client'
+import { createSlice, createEntityAdapter } from '@reduxjs/toolkit'
 
 const notificationsAdapter = createEntityAdapter({
   sortComparer: (a, b) => b.date.localeCompare(a.date)
 })
 
-export const fetchNotifications = createAsyncThunk(
-  'notifications/fetchNotifications',
-  async (_, { getState }) => {
-    const allNotifications = selectAllNotifications(getState())
-    const [latestNotification] = allNotifications
-    const latestTimestamp = latestNotification ? latestNotification.date : ''
-    const response = await client.get(
-      `/fakeApi/notifications?since=${latestTimestamp}`
-    )
-    return response.notifications
-  }
-)
+const initialState = notificationsAdapter.getInitialState({
+  status: 'idle',
+  error: null
+})
 
 const notificationsSlice = createSlice({
   name: 'notifications',
-  initialState: notificationsAdapter.getInitialState(),
+  initialState,
   reducers: {
+    fetchNotifications(state) {
+      state.status = 'loading'
+    },
+    fetchNotificationsSuccess(state, action) {
+      state.status = 'succeeded'
+      Object.values(state.entities).forEach(notification => {
+        notification.isNew = !notification.read
+      })
+      notificationsAdapter.upsertMany(state, action.payload.notifications)
+    },
+    fetchNotificationsFailed(state, action) {
+      state.status = 'failed'
+      state.error = action.error.message
+    },
     allNotificationsRead(state, action) {
       Object.values(state.entities).forEach(notification => {
         notification.read = true
       })
     }
-  },
-  extraReducers: {
-    [fetchNotifications.fulfilled]: (state, action) => {
-      Object.values(state.entities).forEach(notification => {
-        notification.isNew = !notification.read
-      })
-      notificationsAdapter.upsertMany(state, action.payload)
-    }
   }
 })
-
-export const { allNotificationsRead } = notificationsSlice.actions
 
 export const { name, reducer, actions } = notificationsSlice
 

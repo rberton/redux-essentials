@@ -1,25 +1,21 @@
 import React, { useEffect } from 'react'
 
 import { useSelector, useDispatch } from 'react-redux'
-import { useInjectReducer, useInjectSaga } from 'redux-injectors'
 
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import classnames from 'classnames'
 
-import saga from './notificationsSaga'
 import { selectAllUsers } from '../users/usersSlice'
 
-import { name, reducer, selectAllNotifications, allNotificationsRead } from './notificationsSlice'
+import { selectAllNotifications, actions } from './notificationsSlice'
 
 export const NotificationsList = () => {
-  useInjectReducer({key: name, reducer})
-  useInjectSaga({key: name, saga})
   const dispatch = useDispatch()
   const notifications = useSelector(selectAllNotifications)
   const users = useSelector(selectAllUsers)
 
   useEffect(() => {
-    dispatch(allNotificationsRead())
+    dispatch(actions.allNotificationsRead())
   })
 
   const renderedNotifications = notifications.map(notification => {
